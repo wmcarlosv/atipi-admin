@@ -20,7 +20,7 @@ class CreateLinksTable extends Migration
             $table->integer('position')->nullable(false)->default(0);
             $table->timestamps();
 
-            $table->foreign('channel_id')->references('id')->on('channels')->onUpdate('restrict')->onDelete('restrict');
+            $table->foreign('channel_id')->references('id')->on('channels')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
