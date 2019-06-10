@@ -19,15 +19,22 @@
     		<h2>{{ $title }}</h2>
     	</div>
     	<div class="panel-body">
-    		@if($action == 'new')
-    			{!! Form::open(['route' => 'channels.store', 'method' => 'POST', 'autocomplete' => 'off', 'files' => true]) !!}
-    		@else
-    			{!! Form::open(['route' => ['channels.update',$data->id], 'method' => 'PUT', 'autocomplete' => 'off', 'files' => true]) !!}
-    		@endif
-    			<div class="form-group">
-    				<label for="name">Nombre: </label>
-    				<input class="form-control" type="text" value="{{ @$data->name }}" name="name" id="name" />
-    			</div>
+            <ul class="nav nav-tabs">
+              <li class="active"><a data-toggle="tab" href="#channel">Canal</a></li>
+              <li><a data-toggle="tab" href="#links">Links</a></li>
+            </ul>
+            @if($action == 'new')
+                {!! Form::open(['route' => 'channels.store', 'method' => 'POST', 'autocomplete' => 'off', 'files' => true]) !!}
+            @else
+                {!! Form::open(['route' => ['channels.update',$data->id], 'method' => 'PUT', 'autocomplete' => 'off', 'files' => true]) !!}
+            @endif
+            <div class="tab-content">
+              <div id="channel" class="tab-pane fade in active">
+                <br />
+                <div class="form-group">
+                    <label for="name">Nombre: </label>
+                    <input class="form-control" type="text" value="{{ @$data->name }}" name="name" id="name" />
+                </div>
                 <div class="form-group">
                     <label for="description">Descripci&oacute;n: </label>
                     <textarea class="form-control" name="description" id="description">{{ @$data->description }}</textarea>
@@ -75,10 +82,57 @@
                         @endforeach
                     </select>
                 </div>
-    			<button class="btn btn-success"><i class="fa fa-floppy-o"></i> Guardar</button>
-    			<a class="btn btn-danger" href="{{ route('channels.index') }}"><i class="fa fa-times"></i> Cancelar</a>
+              </div>
+              <div id="links" class="tab-pane fade">
+                <br />
+                <button class="btn btn-success open-links-modal" type="button"><i class="fa fa-plus"></i> Agregar</button>
+                <table class="table table-bordered table-striped list-links">
+                    <thead>
+                        <th>Url</th>
+                        <th>-</th>
+                    </thead>
+                    <tbody>
+                        @if($action == 'update')
+                            @foreach($data->links as $l)
+                                <tr>
+                                    <td><input type='text' name='links[]' readonly='readonly' class='form-control' value='{{ $l->url }}' /></td>
+                                    <td><button type='button' class='btn btn-danger delete-row'><i class='fa fa-times'></i></button></td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+              </div>
+            </div>
+			<button class="btn btn-success"><i class="fa fa-floppy-o"></i> Guardar</button>
+			<a class="btn btn-danger" href="{{ route('channels.index') }}"><i class="fa fa-times"></i> Cancelar</a>
     		{!! Form::close() !!}
     	</div>
+    </div>
+
+    <!-- Links Modal -->
+    <div id="links_modal" class="modal fade" role="dialog">
+      <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Agregar Links</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+                <label for="link">Link</label>
+                <input class="form-control" type="text" name="link" id="link" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success add-links"><i class="fa fa-plus"></i> Agregar</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times"></i> Cerrar</button>
+          </div>
+        </div>
+
+      </div>
     </div>
 @stop
 @section('js')
@@ -97,6 +151,27 @@
                 });
             }
         });
+
+        $("button.open-links-modal").click(function(){
+            $("#links_modal").modal("show");
+        });
+
+        $("button.add-links").click(function(){
+            var link = $("#link").val();
+            var html = "<tr>";
+                html+= "<td><input type='text' name='links[]' readonly='readonly' class='form-control' value='"+link+"' /></td>";
+                html+= "<td><button type='button' class='btn btn-danger delete-row'><i class='fa fa-times'></i></button></td>";
+                html+= "</tr>";
+                $("table.list-links tbody").append(html);
+                html = "";
+                $("#link").val("");
+                $("#links_modal").modal("hide");
+        });
+
+        $("body").on('click','button.delete-row', function(){
+            $(this).parent().parent().remove();
+        });
+
     });
 </script>
 @stop

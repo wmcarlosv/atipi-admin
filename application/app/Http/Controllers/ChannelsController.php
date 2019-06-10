@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Channel;
 use App\Country;
 use App\Category;
-use Illuminate\Support\Facades\Storage;
+use App\Link;
 use Auth;
+use DB;
 
 class ChannelsController extends Controller
 {
@@ -50,6 +52,8 @@ class ChannelsController extends Controller
             'category_id' => 'required'
         ]);
 
+        DB::BeginTransaction();
+
         $object = new Channel();
         $object->user_id = Auth::user()->id;
         $object->name = $request->input('name');
@@ -63,9 +67,30 @@ class ChannelsController extends Controller
         $object->country_id = $request->input('country_id');
 
         if($object->save()){
-            flash()->overlay('Registro insertado con Exito!!','Exito');
+            $channel_id = $object->id;
+            $errors = 0;
+            $links = $request->input('links');
+            if(count($links) > 0){
+                for($i=0;$i<count($links);$i++){
+                    $object = new Link();
+                    $object->channel_id = $channel_id;
+                    $object->url = $links[$i];
+                    $object->position = ($i+1);
+                    if(!$object->save()){
+                        $errors++;
+                    }
+                }
+            }
         }else{
+           flash()->overlay('Error al tratar de insertar el Registro!!','Error'); 
+        }
+
+        if($errors > 0){
+            DB::roolback();
             flash()->overlay('Error al tratar de insertar el Registro!!','Error');
+        }else{
+            DB::commit();
+            flash()->overlay('Registro insertado con Exito!!','Exito');
         }
 
         return redirect()->route($this->route);
@@ -120,6 +145,8 @@ class ChannelsController extends Controller
             'category_id' => 'required'
         ]);
 
+        DB::BeginTransaction();
+
         $object = Channel::findorfail($id);
         $object->user_id = Auth::user()->id;
         $object->name = $request->input('name');
@@ -131,9 +158,31 @@ class ChannelsController extends Controller
         $object->country_id = $request->input('country_id');
 
         if($object->save()){
-            flash()->overlay('Registro actualizado con Exito!!','Exito');
+            $channel_id = $object->id;
+            $errors = 0;
+            $links = $request->input('links');
+            if(count($links) > 0){
+                $object->links()->delete();
+                for($i=0;$i<count($links);$i++){
+                    $object = new Link();
+                    $object->channel_id = $channel_id;
+                    $object->url = $links[$i];
+                    $object->position = ($i+1);
+                    if(!$object->save()){
+                        $errors++;
+                    }
+                }
+            }
         }else{
+           flash()->overlay('Error al tratar de actualizar el Registro!!','Error'); 
+        }
+
+        if($errors > 0){
+            DB::roolback();
             flash()->overlay('Error al tratar de actualizar el Registro!!','Error');
+        }else{
+            DB::commit();
+            flash()->overlay('Registro actualizado con Exito!!','Exito');
         }
 
         return redirect()->route($this->route);
